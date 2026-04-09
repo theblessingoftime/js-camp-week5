@@ -57,8 +57,11 @@ const orders = [
  */
 function getProductById(products, productId) {
   // 請實作此函式
+  const product = products.find(product => product.id === productId)
+  return product || null;
 }
-
+//測試1.
+getProductById(products, 'prod-2');
 /**
  * 2. 根據分類篩選產品
  * @param {Array} products - 產品陣列
@@ -67,8 +70,13 @@ function getProductById(products, productId) {
  */
 function getProductsByCategory(products, category) {
   // 請實作此函式
+  if (category === '全部') {
+    return products;
+  }
+  return products.filter(item => item.category === category);
 }
-
+//測試2.
+getProductsByCategory(products, '衣服');
 /**
  * 3. 計算產品折扣率
  * @param {Object} product - 產品物件
@@ -76,8 +84,13 @@ function getProductsByCategory(products, category) {
  * 計算方式：Math.round((price / origin_price) * 100) / 10
  */
 function getDiscountRate(product) {
-  // 請實作此函式
+  const price = product.price;
+  const origin_price = product.origin_price;
+  const discountRate = Math.round((price / origin_price) * 100) / 10;
+  return `${discountRate}折`;
 }
+//測試3.
+getDiscountRate(products[0]);
 
 /**
  * 4. 取得所有產品分類（不重複）
@@ -85,8 +98,20 @@ function getDiscountRate(product) {
  * @returns {Array} - 回傳分類陣列，例如 ['衣服', '褲子', '鞋子', '配件']
  */
 function getAllCategories(products) {
-  // 請實作此函式
+  // 步驟1：提取所有分類
+  const categories = products.map((item) => item.category);
+  // 步驟2：使用 Set 去除重複，再轉回陣列
+  return [...new Set(categories)];
 }
+/* function getAllCategories(products) {
+  return products
+    .map(item => item.category)
+    .filter((category, index, array) => {
+      return array.indexOf(category) === index;
+    });
+} */
+//測試4.
+getAllCategories(products);
 
 // ========================================
 // 任務二：購物車計算模組 (中階)
@@ -98,8 +123,17 @@ function getAllCategories(products) {
  * @returns {number} - 回傳數字（原價 × 數量 的總和）
  */
 function calculateCartOriginalTotal(carts) {
-  // 請實作此函式
+  return carts.reduce((total, item) => {
+    return total + item.product.origin_price * item.quantity;
+  }, 0); // 初始值設為 0
 }
+/* const cartOriginalTotal = carts.reduce((sum, item) => {
+  return sum + item.product.origin_price * item.quantity;
+}, 0);
+return cartOriginalTotal;
+} */
+//測試1.
+calculateCartOriginalTotal(carts);
 
 /**
  * 2. 計算購物車售價總金額
@@ -107,8 +141,16 @@ function calculateCartOriginalTotal(carts) {
  * @returns {number} - 回傳數字（售價 × 數量 的總和）
  */
 function calculateCartTotal(carts) {
-  // 請實作此函式
+  return carts.reduce((total, item) => {
+    return total + item.product.price * item.quantity;
+  }, 0);
 }
+/* const cartTotal = carts.reduce((total, cart) => {
+  return total + cart.product.price * cart.quantity;
+}, 0);
+return cartTotal; */
+//測試2.
+calculateCartTotal(carts);
 
 /**
  * 3. 計算總共省下多少錢
@@ -116,8 +158,16 @@ function calculateCartTotal(carts) {
  * @returns {number} - 回傳原價總金額 - 售價總金額
  */
 function calculateSavings(carts) {
-  // 請實作此函式
+  // 重用已定義的函式，避免重複邏輯
+  return calculateCartOriginalTotal(carts) - calculateCartTotal(carts);
 }
+/* const originalTotal = calculateCartOriginalTotal(carts);
+const total = calculateCartTotal(carts);
+return originalTotal - total; */
+// 請實作此函式
+
+//測試3.
+calculateSavings(carts);
 
 /**
  * 4. 計算購物車商品總數量
@@ -126,7 +176,16 @@ function calculateSavings(carts) {
  */
 function calculateCartItemCount(carts) {
   // 請實作此函式
+  return carts.reduce((count, item) => count + item.quantity, 0);
 }
+/* const cartItemCount = carts.reduce((total, cart) => {
+  return total + cart.quantity;
+}, 0);
+return cartItemCount; 
+}*/
+
+//測試4.
+calculateCartItemCount(carts);
 
 /**
  * 5. 檢查產品是否已在購物車中
@@ -136,7 +195,10 @@ function calculateCartItemCount(carts) {
  */
 function isProductInCart(carts, productId) {
   // 請實作此函式
+  return carts.some(item => item.product.id === productId);
 }
+//測試5.
+isProductInCart(carts, 'prod-1');
 
 // ========================================
 // 任務三：購物車操作模組 (進階)
@@ -152,7 +214,35 @@ function isProductInCart(carts, productId) {
  */
 function addToCart(carts, product, quantity) {
   // 請實作此函式
+  if (!product || !product.id) {
+    return carts;
+  }
+  const existingIndex = carts.findIndex(item => item.product.id === product.id);
+  if (existingIndex !== -1) {
+    // 產品已存在，合併數量
+    return carts.map((item, index) => {
+      if (index === existingIndex) {
+        return {
+          ...item,
+          quantity: item.quantity + quantity
+        };
+      }
+      return item;
+    });
+
+  } else {
+    // 產品不存在，新增一筆，程式掃描購物車：'prod-1' (白T) → 'prod-3' (帆布鞋) → 'prod-5' (外套)。結果：通通不匹配，回傳 -1。
+    const newCartItem = {
+      id: `cart-${Date.now()}`, // 簡單的 ID生成
+      product: product,
+      quantity: quantity
+    };
+    return [...carts, newCartItem];
+  }
 }
+//測試1.
+addToCart(carts, products[0], 1);
+addToCart(carts, products[1], 1);
 
 /**
  * 2. 更新購物車商品數量
@@ -163,7 +253,26 @@ function addToCart(carts, product, quantity) {
  */
 function updateCartItemQuantity(carts, cartId, newQuantity) {
   // 請實作此函式
+  const cartIndex = carts.findIndex(cart => cart.id === cartId);
+  if (cartIndex === -1) {
+    // 找不到該購物車項目，回傳原陣列
+    return carts;
+  } else {
+    if (newQuantity <= 0) {
+      // newQuantity <= 0，移除該商品
+      return carts.filter(cart => cart.id !== cartId);
+    }
+    const updatedCarts = [...carts];
+    updatedCarts[cartIndex] = {
+      ...updatedCarts[cartIndex],
+      quantity: newQuantity
+    };
+    return updatedCarts;
+  }
 }
+//測試2.
+updateCartItemQuantity(carts, 'cart-1', 3);
+updateCartItemQuantity(carts, 'cart-2', 0);
 
 /**
  * 3. 從購物車移除商品
@@ -173,7 +282,10 @@ function updateCartItemQuantity(carts, cartId, newQuantity) {
  */
 function removeFromCart(carts, cartId) {
   // 請實作此函式
+  return carts.filter(cart => cart.id !== cartId);
 }
+//測試3.
+removeFromCart(carts, 'cart-1');
 
 /**
  * 4. 清空購物車
@@ -181,7 +293,10 @@ function removeFromCart(carts, cartId) {
  */
 function clearCart() {
   // 請實作此函式
+  return [];
 }
+//測試4.
+clearCart();
 
 // ========================================
 // 任務四：訂單統計模組 (挑戰)
@@ -194,6 +309,8 @@ function clearCart() {
  */
 function calculateTotalRevenue(orders) {
   // 請實作此函式
+  return orders.filter(order => order.paid)
+    .reduce((total, order) => total + order.total, 0);
 }
 
 /**
@@ -204,6 +321,7 @@ function calculateTotalRevenue(orders) {
  */
 function filterOrdersByStatus(orders, isPaid) {
   // 請實作此函式
+  return orders.filter(order => order.paid === isPaid);
 }
 
 /**
@@ -220,6 +338,19 @@ function filterOrdersByStatus(orders, isPaid) {
  */
 function generateOrderReport(orders) {
   // 請實作此函式
+  const paidOrders = orders.filter(order => order.paid);
+  const unpaidOrders = orders.filter(order => !order.paid);
+  const totalRevenue = calculateTotalRevenue(orders)
+  /*paidOrders.reduce((total, order) => total + order.total, 0);*/
+  const totalOrder = orders.reduce((total, order) => total + order.total, 0);
+
+  return {
+    totalOrders: orders.length,
+    paidOrders: paidOrders.length,
+    unpaidOrders: unpaidOrders.length,
+    totalRevenue,
+    averageOrderValue: Math.round(totalOrder / orders.length)
+  }
 }
 
 /**
@@ -227,13 +358,28 @@ function generateOrderReport(orders) {
  * @param {Array} orders - 訂單陣列
  * @returns {Object} - 回傳格式：
  * {
- *   'ATM': [order1],
- *   'Credit Card': [order2]
+ *   'ATM': [],
+ *   'Credit Card': []
  * }
  */
+// group ={
+//   'ATM': [order1],
+//   'Credit Card': [order2]
+// }
 function groupOrdersByPayment(orders) {
   // 請實作此函式
+  return orders.reduce((group, order) => {
+    const payment = order.user.payment;//ATM
+    if (!group[payment]) {
+      group[payment] = [];
+    }
+
+    group[payment].push(order);
+
+    return group;
+  }, {});
 }
+
 
 // ========================================
 // 測試區域（可自行修改測試）
